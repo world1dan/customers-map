@@ -5,18 +5,19 @@ import { Organization } from '@polar-sh/sdk/models/components/organization.js'
 import save from 'file-saver'
 import { createContext, domToBlob } from 'modern-screenshot'
 
-import { Button } from '@/components/ui/button'
-
-const WORKER_URL = new URL('modern-screenshot/dist/worker.js', import.meta.url)
-    .href
+import { cn } from '@/lib/utils'
+import { Button, ButtonProps } from '@/components/ui/button'
 
 export function ExportImageButton({
     containerRef,
     organizationInfo,
+    className,
+    disabled,
+    ...restProps
 }: {
     containerRef: React.RefObject<HTMLDivElement | null>
     organizationInfo: Organization | null
-}) {
+} & ButtonProps) {
     const [isPending, setIsPending] = useState(false)
 
     async function exportImage() {
@@ -26,27 +27,31 @@ export function ExportImageButton({
 
         setIsPending(true)
 
-        const context = await createContext(containerRef.current, {
-            scale: 3,
-            autoDestruct: true,
-            workerNumber: 1,
-            type: `image/png`,
-            style: { overflow: 'hidden' },
-            workerUrl: WORKER_URL,
-        })
+        try {
+            const context = await createContext(containerRef.current, {
+                scale: 3,
+                autoDestruct: true,
+                type: `image/png`,
+                style: { overflow: 'hidden' },
+                debug: true,
+            })
 
-        const blob = await domToBlob(context)
+            const blob = await domToBlob(context)
 
-        save(blob, `polar-customers-map-${organizationInfo.slug}.png`)
+            save(blob, `polar-customers-map-${organizationInfo.slug}.png`)
+        } catch (error) {
+            console.error(error)
+        }
 
         setIsPending(false)
     }
     return (
         <Button
-            className="shrink-0 rounded-full"
+            className={cn('shrink-0 rounded-full pr-5 pl-3.5', className)}
             size="lg"
             onClick={exportImage}
-            disabled={isPending}
+            disabled={isPending || disabled}
+            {...restProps}
         >
             {isPending ? (
                 <SpinnerIcon className="h-5 w-5 animate-spin" />

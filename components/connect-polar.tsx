@@ -1,10 +1,10 @@
 'use client'
 
-import { ComponentProps, ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 
 import { SpinnerIcon } from '@phosphor-icons/react'
 
-import { Button } from '@/components/ui/button'
+import { Button, ButtonProps } from '@/components/ui/button'
 
 export interface PolarTokenData {
     access_token: string
@@ -14,7 +14,7 @@ export interface PolarTokenData {
     token_type: string
 }
 
-interface ConnectPolarButtonProps extends ComponentProps<'button'> {
+interface ConnectPolarButtonProps extends ButtonProps {
     onToken?: (token: PolarTokenData) => Promise<void>
     onRedirect?: () => void
     idleText?: string
@@ -59,7 +59,7 @@ export function ConnectPolarButton({
     }
 
     useEffect(() => {
-        if (!onToken) return
+        if (!onToken || loading) return
         const url = new URL(window.location.href)
         const code = url.searchParams.get('code')
 
@@ -118,6 +118,7 @@ export function ConnectPolarButton({
         }
 
         handleAuthCode()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onToken])
 
     return (
@@ -129,7 +130,11 @@ export function ConnectPolarButton({
             disabled={loading}
             {...restProps}
         >
-            {loading ? <SpinnerIcon className="h-5 w-5 animate-spin" /> : icon}
+            {loading ? (
+                <SpinnerIcon className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+                icon
+            )}
             {children}
         </Button>
     )

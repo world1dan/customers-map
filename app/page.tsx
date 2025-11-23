@@ -4,6 +4,7 @@
 import { useRef } from 'react'
 import Image from 'next/image'
 
+import polarLogomarkWhite from '@/assets/polar_logomark_white.svg'
 import polarLogotypeBlack from '@/assets/polar_logotype_black.svg'
 import polarLogotypeWhite from '@/assets/polar_logotype_white.svg'
 import { SiGithub, SiX } from '@icons-pack/react-simple-icons'
@@ -44,8 +45,6 @@ export default function Home() {
             id: userInfo.sub,
         })
 
-        setOrganizationInfo(organization)
-
         let page = 1
         const limit = 100
         let allOrders: Order[] = []
@@ -69,6 +68,7 @@ export default function Home() {
             }
         }
 
+        setOrganizationInfo(organization)
         setOrders(allOrders)
     }
 
@@ -80,36 +80,29 @@ export default function Home() {
     const countries = analyzeOrders(orders)
 
     return (
-        <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-10 p-2 pt-10 pb-20">
-            <div className="flex w-full gap-2.5">
+        <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pt-10! pb-20! sm:gap-8 sm:p-2">
+            <div className="flex gap-6 max-sm:flex-col">
                 <ThemeToggle />
-                <div className="ml-auto flex gap-3.5">
-                    {!organizationInfo && (
-                        <ConnectPolarButton
-                            onToken={onToken}
-                            onRedirect={onRedirect}
-                            icon={null}
-                        >
-                            Authenticate with Polar
-                        </ConnectPolarButton>
-                    )}
+                <div className="flex gap-3.5 max-sm:grid max-sm:grid-cols-2 sm:ml-auto">
                     {organizationInfo && (
                         <>
                             <ConnectPolarButton
                                 onToken={onToken}
                                 onRedirect={onRedirect}
+                                className="pr-5 pl-3.5"
                                 icon={
                                     <ArrowsClockwiseIcon className="h-5 w-5" />
                                 }
                             >
                                 Regenerate
                             </ConnectPolarButton>
-                            <ExportImageButton
-                                containerRef={containerRef}
-                                organizationInfo={organizationInfo}
-                            />
                         </>
                     )}
+                    <ExportImageButton
+                        containerRef={containerRef}
+                        organizationInfo={organizationInfo}
+                        disabled={!organizationInfo}
+                    />
                 </div>
             </div>
             <div className="outline-border overflow-hidden rounded-2xl shadow-2xl outline">
@@ -135,15 +128,26 @@ export default function Home() {
                                     )}
                                     <div className="flex w-full items-center gap-[0.875em]">
                                         <p>{organizationInfo.name}</p>
-                                        <p className="text-foreground/70 underline underline-offset-[0.15em]">
-                                            {organizationInfo.website
-                                                ?.replace(/\/$/, '')
-                                                .replace(/^https?:\/\//, '')}
-                                        </p>
+                                        {organizationInfo.website && (
+                                            <a
+                                                target="_blank"
+                                                href={organizationInfo.website}
+                                                className="text-foreground/70 underline underline-offset-[0.2em]"
+                                            >
+                                                {organizationInfo.website
+                                                    .replace(/\/$/, '')
+                                                    .replace(
+                                                        /^https?:\/\//,
+                                                        '',
+                                                    )}
+                                            </a>
+                                        )}
                                     </div>
                                 </>
                             ) : (
-                                <div className="flex w-full items-center gap-[0.875em]">
+                                <div
+                                    className={`flex w-full items-center gap-[0.875em] ${!organizationInfo && '**:animate-none'}`}
+                                >
                                     <Skeleton className="size-[1.5em] shrink-0 rounded-full" />
                                     <Skeleton className="h-[1.5em] w-[6em]" />
                                     <Skeleton className="h-[1.5em] w-[6em]" />
@@ -152,10 +156,31 @@ export default function Home() {
                             <p className="ml-auto shrink-0">Paying Customers</p>
                         </div>
                         <Separator />
-                        <DottedMap
-                            countries={countries.map((c) => c.code)}
-                            className="p-[1.5em]"
-                        />
+                        {organizationInfo ? (
+                            <DottedMap
+                                countries={countries.map((c) => c.code)}
+                                className="p-[1.5em]"
+                            />
+                        ) : (
+                            <div className="p-[1.5em]">
+                                <div className="grid h-[20em] place-content-center">
+                                    <ConnectPolarButton
+                                        onToken={onToken}
+                                        onRedirect={onRedirect}
+                                        variant="default"
+                                        icon={
+                                            <Image
+                                                src={polarLogomarkWhite}
+                                                alt="Polar Logo"
+                                                className="mr-1 h-4 w-fit"
+                                            />
+                                        }
+                                    >
+                                        Authenticate with Polar
+                                    </ConnectPolarButton>
+                                </div>
+                            </div>
+                        )}
                         <Separator />
                         <div className="via-accent/35 bg-linear-to-bl from-transparent to-transparent p-[1.5em]">
                             {countries.length > 0 ? (
@@ -189,7 +214,9 @@ export default function Home() {
                                     {new Array(24).fill(0).map((_, i) => {
                                         return (
                                             <li key={i}>
-                                                <Skeleton className="h-[1.5em]" />
+                                                <Skeleton
+                                                    className={`h-[1.5em] ${!organizationInfo && 'animate-none'}`}
+                                                />
                                             </li>
                                         )
                                     })}
@@ -213,7 +240,7 @@ export default function Home() {
                                     className="h-[1.25em] w-fit"
                                 />
                             </p>
-                            <p className="text-foreground/70 text-center underline underline-offset-[0.15em]">
+                            <p className="text-foreground/70 text-center underline underline-offset-[0.2em]">
                                 customers-map.vercel.app
                             </p>
                         </div>
