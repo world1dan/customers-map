@@ -42,7 +42,7 @@ export default function RootLayout({
             <body
                 className={`${geistMono.variable} ${NotoColorEmoji.variable} antialiased`}
                 style={{
-                    fontFamily: `${geistMono.style.fontFamily}, ${NotoColorEmoji.style.fontFamily}`,
+                    fontFamily: `${geistMono.style.fontFamily}, "Apple Color Emoji", ${NotoColorEmoji.style.fontFamily}`,
                 }}
             >
                 <ThemeProvider
