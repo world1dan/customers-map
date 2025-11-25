@@ -1,5 +1,7 @@
 # Polar Customers Map 🗺️🌍
 
+![Cover](public/cover.png)
+
 Visualize your customers around the world!
 
 Fetches orders directly from your Polar organization and highlights every country where you've ever had paying customers.
