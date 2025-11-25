@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 
 import { SiGithub } from '@icons-pack/react-simple-icons'
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react'
@@ -73,7 +73,7 @@ export default function Home() {
         setOrders([])
     }
 
-    const countries = analyzeOrders(orders)
+    const countries = useMemo(() => analyzeOrders(orders), [orders])
 
     return (
         <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pb-20! sm:gap-6 sm:p-2 sm:pt-8!">
@@ -153,10 +153,11 @@ export default function Home() {
                         </div>
                         <Separator />
                         {organizationInfo ? (
-                            <DottedMap
-                                countries={countries.map((c) => c.code)}
-                                className="p-[1.5em]"
-                            />
+                            <div className="via-accent/40 bg-linear-to-br from-transparent to-transparent p-[1.5em]">
+                                <DottedMap
+                                    countries={countries.map((c) => c.code)}
+                                />
+                            </div>
                         ) : (
                             <div className="p-[1.5em]">
                                 <div className="grid h-[20em] place-content-center">
@@ -178,12 +179,12 @@ export default function Home() {
                             </div>
                         )}
                         <Separator />
-                        <div className="via-accent/35 bg-linear-to-bl from-transparent to-transparent p-[1.5em]">
+                        <div className="via-accent/40 bg-linear-to-bl from-transparent to-transparent p-[1.5em]">
                             {countries.length > 0 ? (
                                 <ol
                                     className="grid list-decimal grid-flow-col grid-cols-4 gap-[0.65em]"
                                     style={{
-                                        gridTemplateRows: `repeat(${Math.round(countries.length / 4)},1fr)`,
+                                        gridTemplateRows: `repeat(${Math.ceil(countries.length / 4)}, 1fr)`,
                                     }}
                                 >
                                     {countries.map((country) => {
@@ -204,10 +205,10 @@ export default function Home() {
                                 <ol
                                     className="grid grid-flow-col grid-cols-4 gap-[0.65em]"
                                     style={{
-                                        gridTemplateRows: `repeat(6, 1fr)`,
+                                        gridTemplateRows: `repeat(8, 1fr)`,
                                     }}
                                 >
-                                    {new Array(24).fill(0).map((_, i) => {
+                                    {new Array(32).fill(0).map((_, i) => {
                                         return (
                                             <li key={i}>
                                                 <Skeleton
@@ -223,18 +224,24 @@ export default function Home() {
                         <div className="flex items-center justify-between px-[1.5em] py-[1.25em]">
                             <p className="text-foreground/70 flex w-fit items-center gap-[0.875em]">
                                 Data from
-                                <img
-                                    src="/polar_logotype_black.svg"
-                                    alt="Polar Logo"
-                                    data-hide-on-theme="dark"
-                                    className="h-[1.25em] w-fit"
-                                />
-                                <img
-                                    src="/polar_logotype_white.svg"
-                                    alt="Polar Logo"
-                                    data-hide-on-theme="light"
-                                    className="h-[1.25em] w-fit"
-                                />
+                                <a
+                                    href="https://polar.sh"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <img
+                                        src="/polar_logotype_black.svg"
+                                        alt="Polar Logo"
+                                        data-hide-on-theme="dark"
+                                        className="h-[1.25em] w-fit"
+                                    />
+                                    <img
+                                        src="/polar_logotype_white.svg"
+                                        alt="Polar Logo"
+                                        data-hide-on-theme="light"
+                                        className="h-[1.25em] w-fit"
+                                    />
+                                </a>
                             </p>
                             <p className="text-foreground/70 text-center underline underline-offset-[0.2em]">
                                 customers-map.vercel.app

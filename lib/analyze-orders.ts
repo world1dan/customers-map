@@ -58,9 +58,9 @@ export function analyzeOrders(orders: Order[]) {
         })
     })
 
-    return Array.from(countryInfo.values()).sort(
-        (a, b) => b.totalRevenue - a.totalRevenue,
-    )
+    return Array.from(countryInfo.values())
+        .filter((c) => c.totalRevenue > 0)
+        .sort((a, b) => b.totalRevenue - a.totalRevenue)
 }
 
 /**

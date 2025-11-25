@@ -4,7 +4,6 @@ import DottedMapComponent from 'dotted-map'
 import DottedMapWithoutCountries from 'dotted-map/without-countries'
 import countriesDB from 'i18n-iso-countries'
 
-import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import precomputedMap from './precomputed-map.json'
@@ -16,10 +15,9 @@ const DEFAULT_WORLD_REGION = {
 
 interface DottedMapProps {
     countries: string[]
-    className?: string
 }
 
-export const DottedMap = ({ countries, className }: DottedMapProps) => {
+export const DottedMap = ({ countries }: DottedMapProps) => {
     const [fullMap, setFullMap] = useState<string | null>(null)
     const [paidCustomersMap, setPaidCustomersMap] = useState<string | null>(
         null,
@@ -75,36 +73,20 @@ export const DottedMap = ({ countries, className }: DottedMapProps) => {
     }, [countries])
 
     if (fullMap === null || paidCustomersMap === null) {
-        return (
-            <div
-                className={cn(
-                    'via-accent/35 bg-linear-to-br from-transparent to-transparent',
-                    className,
-                )}
-            >
-                <Skeleton className="h-[20em] w-full" />
-            </div>
-        )
+        return <Skeleton className="h-[20em] w-full" />
     }
 
     return (
-        <div
-            className={cn(
-                'via-accent/35 bg-linear-to-br from-transparent to-transparent',
-                className,
-            )}
-        >
-            <div className="relative h-[20em] w-full">
-                <div
-                    style={{ width: '100%', height: '100%' }}
-                    dangerouslySetInnerHTML={{ __html: fullMap }}
-                />
-                <div
-                    style={{ width: '100%', height: '100%' }}
-                    dangerouslySetInnerHTML={{ __html: paidCustomersMap }}
-                    className="absolute top-0 left-0"
-                />
-            </div>
+        <div className="relative h-[20em] w-full">
+            <div
+                style={{ width: '100%', height: '100%' }}
+                dangerouslySetInnerHTML={{ __html: fullMap }}
+            />
+            <div
+                style={{ width: '100%', height: '100%' }}
+                dangerouslySetInnerHTML={{ __html: paidCustomersMap }}
+                className="absolute top-0 left-0"
+            />
         </div>
     )
 }
