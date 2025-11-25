@@ -116,8 +116,14 @@
     * {
         @apply border-border outline-ring/50;
     }
+    html {
+        @apply overflow-y-scroll;
+    }
     body {
         @apply bg-background text-foreground;
+    }
+    button {
+        @apply cursor-pointer;
     }
 
     @media (prefers-reduced-motion: no-preference) {

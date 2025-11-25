@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ExportIcon, SpinnerIcon } from '@phosphor-icons/react'
 import { Organization } from '@polar-sh/sdk/models/components/organization.js'
 import save from 'file-saver'
-import { createContext, domToBlob } from 'modern-screenshot'
+import { domToBlob } from 'modern-screenshot'
 
 import { cn } from '@/lib/utils'
 import { Button, ButtonProps } from '@/components/ui/button'
@@ -27,21 +27,13 @@ export function ExportImageButton({
 
         setIsPending(true)
 
-        try {
-            const context = await createContext(containerRef.current, {
-                scale: 3,
-                autoDestruct: true,
-                type: `image/png`,
-                style: { overflow: 'hidden' },
-                debug: true,
-            })
+        const blob = await domToBlob(containerRef.current, {
+            scale: 4,
+            type: `image/png`,
+            style: { overflow: 'hidden' },
+        })
 
-            const blob = await domToBlob(context)
-
-            save(blob, `polar-customers-map-${organizationInfo.slug}.png`)
-        } catch (error) {
-            console.error(error)
-        }
+        save(blob, `${organizationInfo.slug}-customers-map.png`)
 
         setIsPending(false)
     }

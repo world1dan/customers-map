@@ -55,9 +55,8 @@ export function ThemeToggle() {
             aria-label="Toggle dark mode"
             pressed={isDark}
             onPressedChange={() => handleThemeChange()}
-            variant="outline"
             size="sm"
-            className="text-muted-foreground! size-10 rounded-full p-0!"
+            className="text-muted-foreground! hover:text-foreground hover:bg-secondary! size-10 rounded-full bg-transparent! p-0!"
         >
             {isDark ? (
                 <MoonIcon className="size-5" weight="bold" />

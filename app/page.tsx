@@ -2,12 +2,8 @@
 'use client'
 
 import { useRef } from 'react'
-import Image from 'next/image'
 
-import polarLogomarkWhite from '@/assets/polar_logomark_white.svg'
-import polarLogotypeBlack from '@/assets/polar_logotype_black.svg'
-import polarLogotypeWhite from '@/assets/polar_logotype_white.svg'
-import { SiGithub, SiX } from '@icons-pack/react-simple-icons'
+import { SiGithub } from '@icons-pack/react-simple-icons'
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react'
 import { Polar } from '@polar-sh/sdk'
 import type { Order } from '@polar-sh/sdk/models/components/order.js'
@@ -80,8 +76,8 @@ export default function Home() {
     const countries = analyzeOrders(orders)
 
     return (
-        <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pt-10! pb-20! sm:gap-8 sm:p-2">
-            <div className="flex gap-6 max-sm:flex-col">
+        <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pb-20! sm:gap-6 sm:p-2 sm:pt-8!">
+            <div className="flex gap-3.5 max-sm:flex-col">
                 <ThemeToggle />
                 <div className="flex gap-3.5 max-sm:grid max-sm:grid-cols-2 sm:ml-auto">
                     {organizationInfo && (
@@ -169,8 +165,8 @@ export default function Home() {
                                         onRedirect={onRedirect}
                                         variant="default"
                                         icon={
-                                            <Image
-                                                src={polarLogomarkWhite}
+                                            <img
+                                                src="/polar_logomark_white.svg"
                                                 alt="Polar Logo"
                                                 className="mr-1 h-4 w-fit"
                                             />
@@ -227,14 +223,14 @@ export default function Home() {
                         <div className="flex items-center justify-between px-[1.5em] py-[1.25em]">
                             <p className="text-foreground/70 flex w-fit items-center gap-[0.875em]">
                                 Data from
-                                <Image
-                                    src={polarLogotypeBlack}
+                                <img
+                                    src="/polar_logotype_black.svg"
                                     alt="Polar Logo"
                                     data-hide-on-theme="dark"
                                     className="h-[1.25em] w-fit"
                                 />
-                                <Image
-                                    src={polarLogotypeWhite}
+                                <img
+                                    src="/polar_logotype_white.svg"
                                     alt="Polar Logo"
                                     data-hide-on-theme="light"
                                     className="h-[1.25em] w-fit"
@@ -247,9 +243,9 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-            <footer className="mt-16 flex w-full flex-wrap items-center justify-between gap-8">
+            <footer className="mt-4 flex w-full flex-wrap items-center justify-between gap-8">
                 <a
-                    className="text-foreground/70 flex items-center gap-2 text-sm font-medium opacity-65 transition-opacity hover:underline hover:underline-offset-4 hover:opacity-100"
+                    className="text-foreground/60 flex items-center gap-2 text-sm font-medium underline underline-offset-3"
                     href="https://github.com/world1dan/customers-map"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -258,12 +254,12 @@ export default function Home() {
                     Source
                 </a>
                 <a
-                    className="text-foreground/70 flex items-center gap-2 text-sm font-medium opacity-65 transition-opacity hover:underline hover:underline-offset-4 hover:opacity-100"
+                    className="text-foreground/60 flex items-center gap-2 text-sm font-medium underline underline-offset-3"
                     href="https://x.com/world1dan"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    <SiX size={16} /> @world1dan
+                    by @world1dan
                 </a>
             </footer>
         </div>

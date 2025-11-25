@@ -44,8 +44,8 @@ export const DottedMap = ({ countries, className }: DottedMapProps) => {
 
         setFullMap(
             map.getSVG({
-                radius: 0.22,
-                color: '#A3A3A3',
+                radius: 0.25,
+                color: 'color-mix(in oklab, var(--foreground) 35%, transparent)',
                 shape: 'circle',
                 backgroundColor: 'transparent',
             }),
@@ -66,8 +66,8 @@ export const DottedMap = ({ countries, className }: DottedMapProps) => {
 
         setPaidCustomersMap(
             map2.getSVG({
-                radius: 0.22,
-                color: 'lab(44.0605% 29.0279 -86.0352)',
+                radius: 0.35,
+                color: 'var(--primary)',
                 shape: 'circle',
                 backgroundColor: 'transparent',
             }),
