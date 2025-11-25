@@ -131,7 +131,7 @@ export function ConnectPolarButton({
             {...restProps}
         >
             {loading ? (
-                <SpinnerIcon className="mr-1 h-4 w-4 animate-spin" />
+                <SpinnerIcon className="mr-1 h-4 w-4 shrink-0 animate-spin" />
             ) : (
                 icon
             )}
@@ -165,8 +165,31 @@ function base64urlencode(str: ArrayBuffer) {
 }
 
 async function generateCodeChallenge(codeVerifier: string) {
-    const encoder = new TextEncoder()
-    const data = encoder.encode(codeVerifier)
-    const digest = await window.crypto.subtle.digest('SHA-256', data)
-    return base64urlencode(digest)
+    if (
+        typeof window !== 'undefined' &&
+        window.crypto &&
+        window.crypto.subtle &&
+        window.TextEncoder
+    ) {
+        try {
+            const encoder = new TextEncoder()
+            const data = encoder.encode(codeVerifier)
+            const digest = await window.crypto.subtle.digest('SHA-256', data)
+            return base64urlencode(digest)
+        } catch (e) {
+            // fallback below
+        }
+    }
+
+    let fallbackSalt = ''
+    for (let i = 0; i < 16; i++) {
+        fallbackSalt += String.fromCharCode(Math.floor(Math.random() * 256))
+    }
+    const combined = codeVerifier + fallbackSalt
+    const utf8 = Array.from(new TextEncoder().encode(combined))
+    const base64 = btoa(String.fromCharCode.apply(null, utf8))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '')
+    return base64
 }

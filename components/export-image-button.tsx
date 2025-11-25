@@ -4,6 +4,7 @@ import { ExportIcon, SpinnerIcon } from '@phosphor-icons/react'
 import { Organization } from '@polar-sh/sdk/models/components/organization.js'
 import save from 'file-saver'
 import { domToBlob } from 'modern-screenshot'
+import { flushSync } from 'react-dom'
 
 import { cn } from '@/lib/utils'
 import { Button, ButtonProps } from '@/components/ui/button'
@@ -25,9 +26,13 @@ export function ExportImageButton({
             return
         }
 
-        setIsPending(true)
+        // Ensure that the spinner is shown before we start the export,
+        // because it causes huge lag on the main thread.
+        flushSync(() => {
+            setIsPending(true)
+        })
 
-        const blob = await domToBlob(containerRef.current, {
+        const blob = await domToBlob(containerRef.current!, {
             scale: 4,
             type: `image/png`,
             style: { overflow: 'hidden' },
@@ -37,6 +42,7 @@ export function ExportImageButton({
 
         setIsPending(false)
     }
+
     return (
         <Button
             className={cn('shrink-0 rounded-full pr-5 pl-3.5', className)}

@@ -77,22 +77,19 @@ export default function Home() {
 
     return (
         <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pb-20! sm:gap-6 sm:p-2 sm:pt-8!">
-            <div className="flex gap-3.5 max-sm:flex-col">
+            <div className="flex w-full items-end justify-end gap-3.5 max-sm:flex-col">
                 <ThemeToggle />
-                <div className="flex gap-3.5 max-sm:grid max-sm:grid-cols-2 sm:ml-auto">
+                <div className="flex w-full items-end justify-end gap-3.5">
                     {organizationInfo && (
-                        <>
-                            <ConnectPolarButton
-                                onToken={onToken}
-                                onRedirect={onRedirect}
-                                className="pr-5 pl-3.5"
-                                icon={
-                                    <ArrowsClockwiseIcon className="h-5 w-5" />
-                                }
-                            >
-                                Regenerate
-                            </ConnectPolarButton>
-                        </>
+                        <ConnectPolarButton
+                            onToken={onToken}
+                            onRedirect={onRedirect}
+                            disabled={!organizationInfo}
+                            className="pr-5 pl-3.5"
+                            icon={<ArrowsClockwiseIcon className="h-5 w-5" />}
+                        >
+                            Regenerate
+                        </ConnectPolarButton>
                     )}
                     <ExportImageButton
                         containerRef={containerRef}
@@ -165,6 +162,7 @@ export default function Home() {
                                         onToken={onToken}
                                         onRedirect={onRedirect}
                                         variant="default"
+                                        className="w-[256px]"
                                         icon={
                                             <img
                                                 src="/polar_logomark_white.svg"
@@ -227,19 +225,20 @@ export default function Home() {
                                 <a
                                     href="https://polar.sh"
                                     target="_blank"
+                                    className="w-[4em]"
                                     rel="noopener noreferrer"
                                 >
                                     <img
                                         src="/polar_logotype_black.svg"
                                         alt="Polar Logo"
                                         data-hide-on-theme="dark"
-                                        className="h-[1.25em] w-fit"
+                                        className="h-[1.25em]"
                                     />
                                     <img
                                         src="/polar_logotype_white.svg"
                                         alt="Polar Logo"
                                         data-hide-on-theme="light"
-                                        className="h-[1.25em] w-fit"
+                                        className="h-[1.25em]"
                                     />
                                 </a>
                             </p>
@@ -250,7 +249,14 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-            <footer className="mt-4 flex w-full flex-wrap items-center justify-between gap-8">
+            <p className="text-foreground/70 mt-6 text-sm">
+                Visualize your customers around the world!
+            </p>
+            <p className="text-foreground/70 text-sm">
+                Fetches orders from your Polar organization and highlights every
+                country where you&apos;ve ever had paying customers.
+            </p>
+            <footer className="mt-6 flex w-full flex-wrap items-center justify-between gap-8">
                 <a
                     className="text-foreground/60 flex items-center gap-2 text-sm font-medium underline underline-offset-3"
                     href="https://github.com/world1dan/customers-map"
