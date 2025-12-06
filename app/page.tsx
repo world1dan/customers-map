@@ -256,6 +256,10 @@ export default function Home() {
                 Fetches orders from your Polar organization and highlights every
                 country where you&apos;ve ever had paying customers.
             </p>
+            <p className="text-foreground/70 text-sm">
+                100% private &mdash; all data is fetched locally, and your
+                authentication token is never stored.
+            </p>
             <footer className="mt-6 flex w-full flex-wrap items-center justify-between gap-8">
                 <a
                     className="text-foreground/60 flex items-center gap-2 text-sm font-medium underline underline-offset-3"
