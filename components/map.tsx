@@ -10,7 +10,7 @@ import precomputedMap from './precomputed-map.json'
 
 const DEFAULT_WORLD_REGION = {
     lat: { min: -56, max: 71 },
-    lng: { min: -179, max: 179 },
+    lng: { min: -176, max: 179 },
 }
 
 interface DottedMapProps {
@@ -78,15 +78,21 @@ export const DottedMap = ({ countries }: DottedMapProps) => {
     }
 
     return (
-        <div className="relative h-[20em] w-full">
+        <div
+            className="relative h-[20em] w-full overflow-hidden"
+            style={{
+                maskImage: `linear-gradient(to bottom, transparent 0.2em, black 0.2em)`,
+            }}
+        >
             <div
                 style={{ width: '100%', height: '100%' }}
                 dangerouslySetInnerHTML={{ __html: fullMap }}
+                className="-translate-x-[0.4em]"
             />
             <div
                 style={{ width: '100%', height: '100%' }}
                 dangerouslySetInnerHTML={{ __html: paidCustomersMap }}
-                className="absolute top-0 left-0"
+                className="absolute top-0 left-0 -translate-x-[0.35em]"
             />
         </div>
     )
