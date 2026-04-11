@@ -57,7 +57,7 @@ export default function Home() {
 
             allOrders = allOrders.concat(orders)
 
-            if (orders.length === result.pagination.totalCount) {
+            if (allOrders.length === result.pagination.totalCount) {
                 hasMore = false
             } else {
                 page += 1
