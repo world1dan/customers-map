@@ -11,6 +11,8 @@ import type { Organization } from '@polar-sh/sdk/models/components/organization.
 
 import { analyzeOrders } from '@/lib/analyze-orders'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConnectPolarButton, PolarTokenData } from '@/components/connect-polar'
@@ -24,6 +26,9 @@ export default function Home() {
     const [orders, setOrders] = useLocalStorage<Order[]>('orders', [])
     const [organizationInfo, setOrganizationInfo] =
         useLocalStorage<Organization | null>('organization_info', null)
+
+    const [displayCountryRevenue, setDisplayCountryRevenue] =
+        useLocalStorage<boolean>('display_country_revenue', false)
 
     async function onToken(token: PolarTokenData) {
         setOrganizationInfo(null)
@@ -74,6 +79,8 @@ export default function Home() {
     }
 
     const countries = useMemo(() => analyzeOrders(orders), [orders])
+
+    const colsCount = displayCountryRevenue ? 3 : 4
 
     return (
         <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pb-20! sm:gap-6 sm:p-2 sm:pt-8!">
@@ -180,9 +187,10 @@ export default function Home() {
                         <div className="via-accent/40 bg-linear-to-bl from-transparent to-transparent p-[1.5em]">
                             {countries.length > 0 ? (
                                 <ol
-                                    className="grid list-decimal grid-flow-col grid-cols-4 gap-[0.65em]"
+                                    className="grid list-decimal grid-flow-col gap-[0.65em]"
                                     style={{
-                                        gridTemplateRows: `repeat(${Math.ceil(countries.length / 4)}, 1fr)`,
+                                        gridTemplateColumns: `repeat(${colsCount}, 1fr)`,
+                                        gridTemplateRows: `repeat(${Math.ceil(countries.length / colsCount)}, 1fr)`,
                                     }}
                                 >
                                     {countries.map((country) => {
@@ -195,6 +203,21 @@ export default function Home() {
                                                     {country.flag}
                                                 </span>
                                                 {country.name}
+                                                {displayCountryRevenue && (
+                                                    <span className="text-muted-foreground! ml-[0.5em] inline-block">
+                                                        {Intl.NumberFormat(
+                                                            'en-US',
+                                                            {
+                                                                style: 'currency',
+                                                                currency: 'USD',
+                                                                maximumFractionDigits: 0,
+                                                            },
+                                                        ).format(
+                                                            country.totalRevenue /
+                                                                100,
+                                                        )}
+                                                    </span>
+                                                )}
                                             </li>
                                         )
                                     })}
@@ -249,7 +272,26 @@ export default function Home() {
                     </div>
                 </div>
             </div>
-            <p className="text-foreground/70 mt-6 text-sm">
+            <FieldGroup className="my-4">
+                <Field orientation="horizontal">
+                    <Checkbox
+                        id="terms-checkbox-basic"
+                        name="terms-checkbox-basic"
+                        checked={displayCountryRevenue}
+                        onCheckedChange={(checked) => {
+                            if (checked === 'indeterminate') {
+                                return
+                            }
+
+                            setDisplayCountryRevenue(checked)
+                        }}
+                    />
+                    <FieldLabel htmlFor="terms-checkbox-basic">
+                        Show revenue by country
+                    </FieldLabel>
+                </Field>
+            </FieldGroup>
+            <p className="text-foreground/70 text-sm">
                 Visualize your customers around the world!
             </p>
             <p className="text-foreground/70 text-sm">
