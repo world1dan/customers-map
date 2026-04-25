@@ -65,7 +65,7 @@ export const DottedMap = ({ countries }: DottedMapProps) => {
 
         setPaidCustomersMap(
             map2.getSVG({
-                radius: 0.35,
+                radius: 0.34,
                 color: 'var(--primary)',
                 shape: 'circle',
                 backgroundColor: 'transparent',
@@ -85,14 +85,12 @@ export const DottedMap = ({ countries }: DottedMapProps) => {
             }}
         >
             <div
-                style={{ width: '100%', height: '100%' }}
                 dangerouslySetInnerHTML={{ __html: fullMap }}
-                className="-translate-x-[0.4em]"
+                className="size-full translate-x-[-0.4em]"
             />
             <div
-                style={{ width: '100%', height: '100%' }}
                 dangerouslySetInnerHTML={{ __html: paidCustomersMap }}
-                className="absolute top-0 left-0 -translate-x-[0.35em]"
+                className="absolute top-0 left-0 size-full translate-x-[-0.35em]"
             />
         </div>
     )
