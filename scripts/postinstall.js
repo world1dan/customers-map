@@ -45,6 +45,10 @@ async function main() {
     const publicDir = join(projectRoot, "public");
     const outputPath = join(publicDir, "chromium-pack.tar");
 
+    // Ensure the directory exists before writing
+    mkdirSync(dirname(outputPath), { recursive: true });
+
+
     console.log("📦 Creating chromium tar archive...");
     console.log("   Source:", binDir);
     console.log("   Output:", outputPath);
