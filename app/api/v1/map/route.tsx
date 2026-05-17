@@ -13,31 +13,33 @@ const CHROMIUM_PACK_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/chromium-pack.tar`
     : 'https://github.com/gabenunez/puppeteer-on-vercel/raw/refs/heads/main/example/chromium-dont-use-in-prod.tar'
 
-// Cache the Chromium executable path to avoid re-downloading on subsequent requests
 let cachedExecutablePath: string | null = null
 let downloadPromise: Promise<string> | null = null
 
-/**
- * Downloads and caches the Chromium executable path.
- * Uses a download promise to prevent concurrent downloads.
- */
-async function getChromiumPath(): Promise<string> {
-    // Return cached path if available
-    if (cachedExecutablePath) return cachedExecutablePath
+function ms(start: number) {
+    return `${(performance.now() - start).toFixed(1)}ms`
+}
 
-    // Prevent concurrent downloads by reusing the same promise
+async function getChromiumPath(): Promise<string> {
+    if (cachedExecutablePath) {
+        console.log('[chromium] Using cached executable path')
+        return cachedExecutablePath
+    }
+
     if (!downloadPromise) {
         const chromium = (await import('@sparticuz/chromium-min')).default
+        const dlStart = performance.now()
+        console.log('[chromium] Starting download/resolve...')
         downloadPromise = chromium
             .executablePath(CHROMIUM_PACK_URL)
             .then((path) => {
                 cachedExecutablePath = path
-                console.log('Chromium path resolved:', path)
+                console.log(`[chromium] Path resolved in ${ms(dlStart)}:`, path)
                 return path
             })
             .catch((error) => {
-                console.error('Failed to get Chromium path:', error)
-                downloadPromise = null // Reset on error to allow retry
+                console.error(`[chromium] Failed after ${ms(dlStart)}:`, error)
+                downloadPromise = null
                 throw error
             })
     }
@@ -61,21 +63,27 @@ function toBase64FontFace(
 }
 
 const fontsPath = path.join(process.cwd(), 'assets', 'fonts')
+const fontLoadStart = performance.now()
 const [notoColorEmoji, geistMonoRegular, geistMonoItalic] = await Promise.all([
     fs.readFile(path.join(fontsPath, 'NotoColorEmoji-Regular.ttf')),
     fs.readFile(path.join(fontsPath, 'GeistMono-VariableFont_wght.ttf')),
     fs.readFile(path.join(fontsPath, 'GeistMono-Italic-VariableFont_wght.ttf')),
 ])
+console.log(`[fonts] Loaded from disk in ${ms(fontLoadStart)}`)
 
+const fontFaceStart = performance.now()
 const fontFaces = [
     toBase64FontFace(notoColorEmoji, 'Noto Color Emoji', 'normal'),
     toBase64FontFace(geistMonoRegular, 'Geist Mono', 'normal'),
     toBase64FontFace(geistMonoItalic, 'Geist Mono', 'italic'),
 ].join('\n')
+console.log(`[fonts] Base64 encoded in ${ms(fontFaceStart)}`)
 
 export async function GET(request: NextRequest) {
-    const searchParams = request.nextUrl.searchParams
+    const requestStart = performance.now()
+    console.log('[request] Handler started')
 
+    const searchParams = request.nextUrl.searchParams
     const polarAccessToken = searchParams.get('polar_access_token')
     const organizationId = searchParams.get('organization_id')
 
@@ -89,19 +97,29 @@ export async function GET(request: NextRequest) {
 
     const polar = new Polar({ accessToken: polarAccessToken })
 
+    // Fetch org info
+    const orgStart = performance.now()
     const organizationInfo = await polar.organizations.get({
         id: organizationId,
     })
+    console.log(`[polar] Organization fetched in ${ms(orgStart)}`)
 
+    // Paginate orders
+    const ordersStart = performance.now()
     let page = 1
     const limit = 100
     let allOrders: Order[] = []
     let hasMore = true
 
     while (hasMore) {
+        const pageStart = performance.now()
         const data = await polar.orders.list({ page, limit })
         const result = data.result
         allOrders = allOrders.concat(result.items)
+        console.log(
+            `[polar] Orders page ${page} fetched in ${ms(pageStart)} ` +
+                `(${result.items.length} items, ${allOrders.length}/${result.pagination.totalCount} total)`,
+        )
 
         if (allOrders.length === result.pagination.totalCount) {
             hasMore = false
@@ -109,9 +127,19 @@ export async function GET(request: NextRequest) {
             page += 1
         }
     }
+    console.log(
+        `[polar] All ${allOrders.length} orders fetched in ${ms(ordersStart)}`,
+    )
 
+    // Analyze orders
+    const analyzeStart = performance.now()
     const countries = analyzeOrders(allOrders)
+    console.log(
+        `[analyze] Orders analyzed in ${ms(analyzeStart)} (${Object.keys(countries).length} countries)`,
+    )
 
+    // Server-side render HTML
+    const ssrStart = performance.now()
     const html = renderToStaticMarkup(
         <Composition
             organizationInfo={organizationInfo}
@@ -120,11 +148,11 @@ export async function GET(request: NextRequest) {
             mode="server"
         />,
     )
+    console.log(`[ssr] HTML rendered in ${ms(ssrStart)} (${html.length} chars)`)
 
     let browser: Browser | null = null
 
     try {
-        // Configure browser based on environment
         const isVercel = !!process.env.VERCEL_ENV
         let puppeteer: any,
             launchOptions: LaunchOptions = {
@@ -133,33 +161,41 @@ export async function GET(request: NextRequest) {
             }
 
         if (isVercel) {
-            // Vercel: Use puppeteer-core with downloaded Chromium binary
             const chromium = (await import('@sparticuz/chromium-min')).default
             puppeteer = await import('puppeteer-core')
+            const chromiumStart = performance.now()
             const executablePath = await getChromiumPath()
+            console.log(
+                `[puppeteer] Chromium path ready in ${ms(chromiumStart)}`,
+            )
             launchOptions = {
                 ...launchOptions,
                 args: chromium.args,
                 executablePath,
             }
-            console.log(
-                'Launching browser with executable path:',
-                executablePath,
-            )
         } else {
-            // Local: Use regular puppeteer with bundled Chromium
             puppeteer = await import('puppeteer')
         }
 
-        // Launch browser and capture screenshot
+        // Launch browser
+        const launchStart = performance.now()
         browser = await puppeteer.launch(launchOptions)
+        console.log(`[puppeteer] Browser launched in ${ms(launchStart)}`)
+
+        const pageStart = performance.now()
         const page = await browser!.newPage()
         await page.setViewport({
             width: 600,
             height: 1000,
             deviceScaleFactor: 3,
         })
-        page.setContent(
+        console.log(
+            `[puppeteer] New page + initial viewport set in ${ms(pageStart)}`,
+        )
+
+        // Set HTML content
+        const contentStart = performance.now()
+        await page.setContent(
             `<!DOCTYPE html>
     <html lang="en">
         <head>
@@ -181,10 +217,16 @@ export async function GET(request: NextRequest) {
         </body>
     </html>`,
         )
+        console.log(`[puppeteer] Page content set in ${ms(contentStart)}`)
 
+        // Measure layout
+        const layoutStart = performance.now()
         const mapViewContainer = await page.$('#map-view-container')
-
         const dimensions = await mapViewContainer?.boundingBox()
+        console.log(
+            `[puppeteer] Bounding box measured in ${ms(layoutStart)}: ` +
+                `${dimensions?.width ?? '?'}x${dimensions?.height ?? '?'}`,
+        )
 
         await page.setViewport({
             width: 600,
@@ -192,7 +234,14 @@ export async function GET(request: NextRequest) {
             deviceScaleFactor: 3,
         })
 
+        // Screenshot
+        const screenshotStart = performance.now()
         const screenshot = await page.screenshot({ type: 'png' })
+        console.log(
+            `[puppeteer] Screenshot captured in ${ms(screenshotStart)} (${(screenshot as Buffer).length} bytes)`,
+        )
+
+        console.log(`[request] Total handler time: ${ms(requestStart)}`)
 
         return new NextResponse(screenshot as unknown as BodyInit, {
             headers: {
@@ -201,13 +250,15 @@ export async function GET(request: NextRequest) {
             },
         })
     } catch (error) {
-        console.error('Error:', error)
+        console.error(`[request] Failed after ${ms(requestStart)}:`, error)
         return new NextResponse('An error occurred while generating the map.', {
             status: 500,
         })
     } finally {
         if (browser) {
+            const closeStart = performance.now()
             await browser.close()
+            console.log(`[puppeteer] Browser closed in ${ms(closeStart)}`)
         }
     }
 }
