@@ -45,6 +45,17 @@ async function getChromiumPath(): Promise<string> {
     return downloadPromise
 }
 
+type ImageFormat = 'png' | 'jpeg' | 'webp'
+type ColorScheme = 'light' | 'dark'
+
+const VALID_FORMATS = new Set<ImageFormat>(['png', 'jpeg', 'webp'])
+const VALID_COLOR_SCHEMES = new Set<ColorScheme>(['light', 'dark'])
+const CONTENT_TYPES: Record<ImageFormat, string> = {
+    png: 'image/png',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+}
+
 export async function GET(request: NextRequest) {
     const requestStart = performance.now()
     console.log('[request] Handler started')
@@ -60,6 +71,41 @@ export async function GET(request: NextRequest) {
     if (!organizationId) {
         return NextResponse.json('Missing organization ID.', { status: 400 })
     }
+
+    // --- New params ---
+
+    const rawFormat = searchParams.get('format') ?? 'png'
+    if (!VALID_FORMATS.has(rawFormat as ImageFormat)) {
+        return NextResponse.json(
+            `Invalid format "${rawFormat}". Must be one of: ${[...VALID_FORMATS].join(', ')}.`,
+            { status: 400 },
+        )
+    }
+    const format = rawFormat as ImageFormat
+
+    const rawScale = searchParams.get('scale')
+    const scale = rawScale !== null ? Number(rawScale) : 2
+    if (!Number.isFinite(scale) || scale < 1 || scale > 3) {
+        return NextResponse.json(
+            `Invalid scale "${rawScale}". Must be a number between 1 and 3.`,
+            { status: 400 },
+        )
+    }
+    const deviceScaleFactor = Math.round(scale) as 1 | 2 | 3
+
+    const displayCountryRevenue =
+        searchParams.get('displayCountryRevenue') === 'true'
+
+    const rawColorScheme = searchParams.get('colorScheme') ?? 'light'
+    if (!VALID_COLOR_SCHEMES.has(rawColorScheme as ColorScheme)) {
+        return NextResponse.json(
+            `Invalid colorScheme "${rawColorScheme}". Must be one of: ${[...VALID_COLOR_SCHEMES].join(', ')}.`,
+            { status: 400 },
+        )
+    }
+    const colorScheme = rawColorScheme as ColorScheme
+
+    // ------------------
 
     // Start browser launch immediately, in parallel with all Polar fetches
     const browserPromise: Promise<Browser> = (async () => {
@@ -188,7 +234,7 @@ export async function GET(request: NextRequest) {
         <Composition
             organizationInfo={organizationInfo}
             countries={countries}
-            displayCountryRevenue={false}
+            displayCountryRevenue={displayCountryRevenue}
             mode="server"
         />,
     )
@@ -205,7 +251,7 @@ export async function GET(request: NextRequest) {
         await page.setViewport({
             width: 600,
             height: 1000,
-            deviceScaleFactor: 3,
+            deviceScaleFactor,
         })
         console.log(
             `[puppeteer] New page + initial viewport set in ${ms(pageStart)}`,
@@ -231,7 +277,7 @@ export async function GET(request: NextRequest) {
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:ital,wght@0,100..900;1,100..900&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
         </head>
-        <body class="light">
+        <body class="${colorScheme}">
             <div id="map-view-container">
             ${html}
             </div>
@@ -252,14 +298,15 @@ export async function GET(request: NextRequest) {
         await page.setViewport({
             width: 600,
             height: dimensions?.height ? Math.round(dimensions.height) : 1000,
-            deviceScaleFactor: 3,
+            deviceScaleFactor,
         })
 
         // Screenshot
         const screenshotStart = performance.now()
         const screenshot = await page.screenshot({
-            type: 'png',
+            type: format,
             optimizeForSpeed: true,
+            ...(format !== 'png' && { quality: 90 }),
         })
         console.log(
             `[puppeteer] Screenshot captured in ${ms(screenshotStart)} (${(screenshot as Buffer).length} bytes)`,
@@ -269,13 +316,11 @@ export async function GET(request: NextRequest) {
 
         return new NextResponse(screenshot as unknown as BodyInit, {
             headers: {
-                'Content-Type': 'image/png',
-                'Content-Disposition': 'inline; filename="customers-map.png"',
+                'Content-Type': CONTENT_TYPES[format],
+                'Content-Disposition': `inline; filename="customers-map.${format}"`,
             },
         })
     } catch (error) {
-        // If browserPromise hasn't been awaited yet and it rejected, suppress
-        // the unhandled rejection by awaiting it safely in the catch block.
         if (!browser) {
             browser = await browserPromise.catch(() => null)
         }
