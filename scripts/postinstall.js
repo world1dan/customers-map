@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = dirname(__dirname);
@@ -9,6 +9,13 @@ const projectRoot = dirname(__dirname);
 async function main() {
   try {
     console.log("📦 Starting postinstall script...");
+
+    // Ensure assets/generated exists
+    const assetsGeneratedDir = join(projectRoot, "assets", "generated");
+    if (!existsSync(assetsGeneratedDir)) {
+      mkdirSync(assetsGeneratedDir, { recursive: true });
+      console.log("📁 Created assets/generated directory");
+    }
 
     // Resolve chromium package location
     const chromiumResolvedPath = import.meta.resolve("@sparticuz/chromium");
