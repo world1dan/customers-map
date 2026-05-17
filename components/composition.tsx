@@ -47,7 +47,11 @@ export function Composition({
                         <>
                             {organizationInfo.avatarUrl && (
                                 <img
-                                    src={`${process.env.NEXT_PUBLIC_URL}/api/proxy-image?url=${organizationInfo.avatarUrl!}`}
+                                    src={
+                                        mode === 'server'
+                                            ? organizationInfo.avatarUrl!
+                                            : `/api/proxy-image?url=${organizationInfo.avatarUrl!}`
+                                    }
                                     className="outline-border size-[1.5em] shrink-0 rounded-full outline"
                                     alt="Organization logo"
                                 />
