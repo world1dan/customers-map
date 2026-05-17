@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = dirname(__dirname);
@@ -15,6 +15,13 @@ async function main() {
     if (!existsSync(assetsGeneratedDir)) {
       mkdirSync(assetsGeneratedDir, { recursive: true });
       console.log("📁 Created assets/generated directory");
+    }
+
+    // Ensure map-styles.ts exists with a default export
+    const mapStylesPath = join(assetsGeneratedDir, "map-styles.ts");
+    if (!existsSync(mapStylesPath)) {
+      writeFileSync(mapStylesPath, "export const mapStyles = [];\n", "utf-8");
+      console.log("📄 Created default assets/generated/map-styles.ts");
     }
 
     // Resolve chromium package location
