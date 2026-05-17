@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Polar } from '@polar-sh/sdk'
 import type { Order } from '@polar-sh/sdk/models/components/order.js'
-import { promises as fs } from 'fs'
-import path from 'path'
 import { analyzeOrders } from '@/lib/analyze-orders'
 import { renderToStaticMarkup } from 'react-dom/server.browser'
 import { mapStyles } from '@/assets/generated/map-styles'
@@ -47,38 +45,6 @@ async function getChromiumPath(): Promise<string> {
     return downloadPromise
 }
 
-function toBase64FontFace(
-    buffer: Buffer,
-    family: string,
-    style: 'normal' | 'italic',
-) {
-    const base64 = buffer.toString('base64')
-    return `
-@font-face {
-    font-family: '${family}';
-    src: url('data:font/truetype;base64,${base64}') format('truetype');
-    font-style: ${style};
-    font-display: block;
-}`
-}
-
-const fontsPath = path.join(process.cwd(), 'assets', 'fonts')
-const fontLoadStart = performance.now()
-const [notoColorEmoji, geistMonoRegular, geistMonoItalic] = await Promise.all([
-    fs.readFile(path.join(fontsPath, 'NotoColorEmoji-Regular.ttf')),
-    fs.readFile(path.join(fontsPath, 'GeistMono-VariableFont_wght.ttf')),
-    fs.readFile(path.join(fontsPath, 'GeistMono-Italic-VariableFont_wght.ttf')),
-])
-console.log(`[fonts] Loaded from disk in ${ms(fontLoadStart)}`)
-
-const fontFaceStart = performance.now()
-const fontFaces = [
-    toBase64FontFace(notoColorEmoji, 'Noto Color Emoji', 'normal'),
-    toBase64FontFace(geistMonoRegular, 'Geist Mono', 'normal'),
-    toBase64FontFace(geistMonoItalic, 'Geist Mono', 'italic'),
-].join('\n')
-console.log(`[fonts] Base64 encoded in ${ms(fontFaceStart)}`)
-
 export async function GET(request: NextRequest) {
     const requestStart = performance.now()
     console.log('[request] Handler started')
@@ -104,31 +70,40 @@ export async function GET(request: NextRequest) {
     })
     console.log(`[polar] Organization fetched in ${ms(orgStart)}`)
 
-    // Paginate orders
-    const ordersStart = performance.now()
-    let page = 1
     const limit = 100
-    let allOrders: Order[] = []
-    let hasMore = true
+    const fetchStart = performance.now()
 
-    while (hasMore) {
-        const pageStart = performance.now()
-        const data = await polar.orders.list({ page, limit })
-        const result = data.result
-        allOrders = allOrders.concat(result.items)
-        console.log(
-            `[polar] Orders page ${page} fetched in ${ms(pageStart)} ` +
-                `(${result.items.length} items, ${allOrders.length}/${result.pagination.totalCount} total)`,
-        )
+    // Fetch first page to learn the total count
+    const firstData = await polar.orders.list({ page: 1, limit })
+    const { items, pagination } = firstData.result
+    const totalCount = pagination.totalCount
+    const totalPages = Math.ceil(totalCount / limit)
 
-        if (allOrders.length === result.pagination.totalCount) {
-            hasMore = false
-        } else {
-            page += 1
-        }
-    }
     console.log(
-        `[polar] All ${allOrders.length} orders fetched in ${ms(ordersStart)}`,
+        `[polar] Orders page 1 fetched in ${ms(fetchStart)} (${items.length} items, ${items.length}/${totalCount} total)`,
+    )
+
+    // Fetch all remaining pages in parallel
+    const remainingPages = Array.from(
+        { length: totalPages - 1 },
+        (_, i) => i + 2,
+    )
+    const remainingResults = await Promise.all(
+        remainingPages.map(async (page) => {
+            const pageStart = performance.now()
+            const data = await polar.orders.list({ page, limit })
+            const result = data.result
+            console.log(
+                `[polar] Orders page ${page} fetched in ${ms(pageStart)} ` +
+                    `(${result.items.length} items)`,
+            )
+            return result.items
+        }),
+    )
+
+    const allOrders: Order[] = [items, ...remainingResults].flat()
+    console.log(
+        `[polar] All ${allOrders.length} orders fetched in ${ms(fetchStart)}`,
     )
 
     // Analyze orders
@@ -203,12 +178,15 @@ export async function GET(request: NextRequest) {
             <link rel="icon" href="/favicon.ico" />
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <title>Customers Map</title>
-            <style>${fontFaces}${mapStyles}</style>
+            <style>${mapStyles}</style>
             <style>
                 html {
                     font-family: 'Geist Mono', 'Noto Color Emoji', sans-serif;
                 }
             </style>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:ital,wght@0,100..900;1,100..900&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
         </head>
         <body class="light">
             <div id="map-view-container">
