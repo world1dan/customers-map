@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { SpinnerIcon } from '@phosphor-icons/react'
 
 import { Button, ButtonProps } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export interface PolarTokenData {
     access_token: string
@@ -15,7 +16,7 @@ export interface PolarTokenData {
 }
 
 interface ConnectPolarButtonProps extends ButtonProps {
-    onToken?: (token: PolarTokenData) => Promise<void>
+    onToken?: (token: PolarTokenData) => AsyncGenerator<string, void, unknown>
     onRedirect?: () => void
     idleText?: string
     icon?: ReactNode
@@ -32,8 +33,10 @@ export function ConnectPolarButton({
     onRedirect,
     icon,
     children,
+    className,
     ...restProps
 }: ConnectPolarButtonProps) {
+    const [label, setLabel] = useState<ReactNode>(children)
     const [loading, setLoading] = useState(false)
 
     async function redirectToPolarOauth(): Promise<void> {
@@ -111,7 +114,9 @@ export function ConnectPolarButton({
             window.history.replaceState({}, '', url.toString())
 
             if (onToken) {
-                await onToken(tokenData)
+                for await (const message of onToken(tokenData)) {
+                    setLabel(message)
+                }
             }
 
             setLoading(false)
@@ -128,6 +133,7 @@ export function ConnectPolarButton({
             onClick={redirectToPolarOauth}
             type="button"
             disabled={loading}
+            className={cn('justify-start text-left', className)}
             {...restProps}
         >
             {loading ? (
@@ -135,7 +141,7 @@ export function ConnectPolarButton({
             ) : (
                 icon
             )}
-            {children}
+            {label}
         </Button>
     )
 }

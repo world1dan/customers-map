@@ -38,10 +38,11 @@ export default function Home() {
     async function clearState() {
         setOrganizationInfo(null)
         setOrders([])
-        setDisplayCountryRevenue(DEFAULT_DISPLAY_COUNTRY_REVENUE)
     }
 
-    async function onToken(token: PolarTokenData) {
+    async function* onToken(
+        token: PolarTokenData,
+    ): AsyncGenerator<string, void, unknown> {
         clearState()
 
         const accessToken = token.access_token
@@ -49,6 +50,8 @@ export default function Home() {
         const polar = new Polar({
             accessToken,
         })
+
+        yield 'Fetching Organization'
 
         const userInfo = await polar.oauth2.userinfo()
 
@@ -59,9 +62,16 @@ export default function Home() {
         let page = 1
         const limit = 100
         let allOrders: Order[] = []
+        let totalCount = 0
         let hasMore = true
 
         while (hasMore) {
+            if (totalCount !== 0) {
+                yield `Fetching Orders (${page}/${Math.ceil(totalCount / limit)})`
+            } else {
+                yield 'Fetching Orders'
+            }
+
             const data = await polar.orders.list({
                 page,
                 limit,
@@ -71,6 +81,8 @@ export default function Home() {
             const orders = result.items
 
             allOrders = allOrders.concat(orders)
+
+            totalCount = result.pagination.totalCount
 
             if (allOrders.length === result.pagination.totalCount) {
                 hasMore = false
@@ -191,7 +203,7 @@ export default function Home() {
                                         onToken={onToken}
                                         onRedirect={onRedirect}
                                         variant="default"
-                                        className="w-[256px]"
+                                        className="w-68"
                                         icon={
                                             <img
                                                 src="/polar_logomark_white.svg"
