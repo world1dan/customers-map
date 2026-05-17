@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
         await page.setViewport({
             width: 600,
             height: 1000,
-            deviceScaleFactor: 2,
+            deviceScaleFactor: 3,
         })
         console.log(
             `[puppeteer] New page + initial viewport set in ${ms(pageStart)}`,
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
         await page.setViewport({
             width: 600,
             height: dimensions?.height ? Math.round(dimensions.height) : 1000,
-            deviceScaleFactor: 2,
+            deviceScaleFactor: 3,
         })
 
         // Screenshot
