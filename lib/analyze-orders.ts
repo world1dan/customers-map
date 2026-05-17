@@ -1,5 +1,3 @@
-'use client'
-
 import type { Order } from '@polar-sh/sdk/models/components/order.js'
 import { OrderCustomer } from '@polar-sh/sdk/models/components/ordercustomer.js'
 import countriesDB from 'i18n-iso-countries'
@@ -7,7 +5,7 @@ import enCountriesLocale from 'i18n-iso-countries/langs/en.json'
 
 countriesDB.registerLocale(enCountriesLocale)
 
-interface CountryInfo {
+export interface CountryInfo {
     code: string
     name: string
     flag: string
