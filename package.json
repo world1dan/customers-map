@@ -10,7 +10,8 @@
         "format": "prettier --write . --log-level silent",
         "start": "next start",
         "lint": "eslint",
-        "check-types": "tsc --noEmit"
+        "check-types": "tsc --noEmit",
+        "postinstall": "bun run scripts/postinstall.js"
     },
     "dependencies": {
         "@icons-pack/react-simple-icons": "^13.13.0",
