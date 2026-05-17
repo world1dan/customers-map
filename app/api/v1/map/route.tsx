@@ -61,6 +61,38 @@ export async function GET(request: NextRequest) {
         return NextResponse.json('Missing organization ID.', { status: 400 })
     }
 
+    // Start browser launch immediately, in parallel with all Polar fetches
+    const browserPromise: Promise<Browser> = (async () => {
+        const isVercel = !!process.env.VERCEL_ENV
+        let puppeteer: any,
+            launchOptions: LaunchOptions = {
+                headless: true,
+                args: ['--disable-web-security'],
+            }
+
+        if (isVercel) {
+            const chromium = (await import('@sparticuz/chromium-min')).default
+            puppeteer = await import('puppeteer-core')
+            const chromiumStart = performance.now()
+            const executablePath = await getChromiumPath()
+            console.log(
+                `[puppeteer] Chromium path ready in ${ms(chromiumStart)}`,
+            )
+            launchOptions = {
+                ...launchOptions,
+                args: chromium.args,
+                executablePath,
+            }
+        } else {
+            puppeteer = await import('puppeteer')
+        }
+
+        const launchStart = performance.now()
+        const browser = await puppeteer.launch(launchOptions)
+        console.log(`[puppeteer] Browser launched in ${ms(launchStart)}`)
+        return browser
+    })()
+
     const polar = new Polar({ accessToken: polarAccessToken })
 
     // Fetch org info
@@ -128,41 +160,15 @@ export async function GET(request: NextRequest) {
     let browser: Browser | null = null
 
     try {
-        const isVercel = !!process.env.VERCEL_ENV
-        let puppeteer: any,
-            launchOptions: LaunchOptions = {
-                headless: true,
-                args: ['--disable-web-security'],
-            }
-
-        if (isVercel) {
-            const chromium = (await import('@sparticuz/chromium-min')).default
-            puppeteer = await import('puppeteer-core')
-            const chromiumStart = performance.now()
-            const executablePath = await getChromiumPath()
-            console.log(
-                `[puppeteer] Chromium path ready in ${ms(chromiumStart)}`,
-            )
-            launchOptions = {
-                ...launchOptions,
-                args: chromium.args,
-                executablePath,
-            }
-        } else {
-            puppeteer = await import('puppeteer')
-        }
-
-        // Launch browser
-        const launchStart = performance.now()
-        browser = await puppeteer.launch(launchOptions)
-        console.log(`[puppeteer] Browser launched in ${ms(launchStart)}`)
+        // Await the already-in-flight promise; likely already resolved by now
+        browser = await browserPromise
 
         const pageStart = performance.now()
-        const page = await browser!.newPage()
+        const page = await browser.newPage()
         await page.setViewport({
             width: 600,
             height: 1000,
-            deviceScaleFactor: 3,
+            deviceScaleFactor: 2,
         })
         console.log(
             `[puppeteer] New page + initial viewport set in ${ms(pageStart)}`,
@@ -209,7 +215,7 @@ export async function GET(request: NextRequest) {
         await page.setViewport({
             width: 600,
             height: dimensions?.height ? Math.round(dimensions.height) : 1000,
-            deviceScaleFactor: 3,
+            deviceScaleFactor: 2,
         })
 
         // Screenshot
@@ -228,6 +234,11 @@ export async function GET(request: NextRequest) {
             },
         })
     } catch (error) {
+        // If browserPromise hasn't been awaited yet and it rejected, suppress
+        // the unhandled rejection by awaiting it safely in the catch block.
+        if (!browser) {
+            browser = await browserPromise.catch(() => null)
+        }
         console.error(`[request] Failed after ${ms(requestStart)}:`, error)
         return new NextResponse('An error occurred while generating the map.', {
             status: 500,
