@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { SiGithub } from '@icons-pack/react-simple-icons'
 import { ArrowsClockwiseIcon } from '@phosphor-icons/react'
@@ -20,6 +20,8 @@ import { ExportImageButton } from '@/components/export-image-button'
 import { DottedMap } from '@/components/map'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+const DEFAULT_DISPLAY_COUNTRY_REVENUE = false
+
 export default function Home() {
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -28,11 +30,19 @@ export default function Home() {
         useLocalStorage<Organization | null>('organization_info', null)
 
     const [displayCountryRevenue, setDisplayCountryRevenue] =
-        useLocalStorage<boolean>('display_country_revenue', false)
+        useLocalStorage<boolean>(
+            'display_country_revenue',
+            DEFAULT_DISPLAY_COUNTRY_REVENUE,
+        )
 
-    async function onToken(token: PolarTokenData) {
+    async function clearState() {
         setOrganizationInfo(null)
         setOrders([])
+        setDisplayCountryRevenue(DEFAULT_DISPLAY_COUNTRY_REVENUE)
+    }
+
+    async function onToken(token: PolarTokenData) {
+        clearState()
 
         const accessToken = token.access_token
 
@@ -74,9 +84,21 @@ export default function Home() {
     }
 
     function onRedirect() {
-        setOrganizationInfo(null)
-        setOrders([])
+        clearState()
     }
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                clearState()
+            }
+        }
+        document.addEventListener('keydown', onKeyDown)
+
+        return () => {
+            document.removeEventListener('keydown', onKeyDown)
+        }
+    }, [])
 
     const countries = useMemo(() => analyzeOrders(orders), [orders])
 
