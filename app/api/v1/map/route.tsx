@@ -7,6 +7,8 @@ import { Composition } from '@/components/composition'
 import { launchBrowser } from './browser'
 import { fetchAllOrders } from './orders'
 import { ms } from './perf'
+import type { PresentmentCurrency } from '@polar-sh/sdk/models/components/presentmentcurrency.js'
+import { getExchangeRates } from '@/lib/get-exchange-rates'
 
 // ── Parameter types & validation ──
 
@@ -87,7 +89,24 @@ export async function GET(request: NextRequest) {
         fetchAllOrders(polar),
     ])
 
-    const countries = analyzeOrders(allOrders)
+    const quotes = new Set<PresentmentCurrency>()
+
+    allOrders.map((order) => {
+        if (order.currency && order.currency !== 'usd') {
+            quotes.add(order.currency as PresentmentCurrency)
+        }
+    })
+
+    const firstOrder = allOrders[allOrders.length - 1]
+    const lastOrder = allOrders[0]
+
+    const exchangeRates = await getExchangeRates({
+        quotes: Array.from(quotes),
+        from: firstOrder ? new Date(firstOrder.createdAt) : undefined,
+        to: lastOrder ? new Date(lastOrder.createdAt) : undefined,
+    })
+
+    const countries = analyzeOrders(allOrders, exchangeRates)
 
     // HTML Rendering
     const html = renderToStaticMarkup(

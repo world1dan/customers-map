@@ -16,6 +16,8 @@ import { ConnectPolarButton, PolarTokenData } from '@/components/connect-polar'
 import { ExportImageButton } from '@/components/export-image-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Composition } from '@/components/composition'
+import { ExchangeRate, getExchangeRates } from '@/lib/get-exchange-rates'
+import type { PresentmentCurrency } from '@polar-sh/sdk/models/components/presentmentcurrency.js'
 
 const DEFAULT_DISPLAY_COUNTRY_REVENUE = false
 
@@ -23,6 +25,11 @@ export default function Home() {
     const containerRef = useRef<HTMLDivElement>(null)
 
     const [orders, setOrders] = useLocalStorage<Order[]>('orders', [])
+    const [exchangeRates, setExchangeRates] = useLocalStorage<ExchangeRate[]>(
+        'exchange_rates',
+        [],
+    )
+
     const [organizationInfo, setOrganizationInfo] =
         useLocalStorage<Organization | null>('organization_info', null)
 
@@ -35,6 +42,7 @@ export default function Home() {
     async function clearState() {
         setOrganizationInfo(null)
         setOrders([])
+        setExchangeRates([])
     }
 
     async function* onToken(
@@ -88,6 +96,26 @@ export default function Home() {
             }
         }
 
+        yield 'Fetching FX Rates'
+
+        const quotes = new Set<PresentmentCurrency>()
+
+        allOrders.map((order) => {
+            if (order.currency && order.currency !== 'usd') {
+                quotes.add(order.currency as PresentmentCurrency)
+            }
+        })
+
+        const firstOrder = allOrders[allOrders.length - 1]
+        const lastOrder = allOrders[0]
+
+        const exchangeRates = await getExchangeRates({
+            quotes: Array.from(quotes),
+            from: firstOrder ? new Date(firstOrder.createdAt) : undefined,
+            to: lastOrder ? new Date(lastOrder.createdAt) : undefined,
+        })
+
+        setExchangeRates(exchangeRates)
         setOrganizationInfo(organization)
         setOrders(allOrders)
     }
@@ -109,7 +137,10 @@ export default function Home() {
         }
     }, [])
 
-    const countries = useMemo(() => analyzeOrders(orders), [orders])
+    const countries = useMemo(
+        () => analyzeOrders(orders, exchangeRates),
+        [orders, exchangeRates],
+    )
 
     return (
         <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4 pb-20! sm:gap-6 sm:p-2 sm:pt-8!">

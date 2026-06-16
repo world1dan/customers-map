@@ -2,6 +2,8 @@ import type { Order } from '@polar-sh/sdk/models/components/order.js'
 import { OrderCustomer } from '@polar-sh/sdk/models/components/ordercustomer.js'
 import countriesDB from 'i18n-iso-countries'
 import enCountriesLocale from 'i18n-iso-countries/langs/en.json'
+import { ExchangeRate } from './get-exchange-rates'
+import { isSameDay } from 'date-fns/isSameDay'
 
 countriesDB.registerLocale(enCountriesLocale)
 
@@ -13,7 +15,7 @@ export interface CountryInfo {
     totalCustomers: number
 }
 
-export function analyzeOrders(orders: Order[]) {
+export function analyzeOrders(orders: Order[], exchangeRates: ExchangeRate[]) {
     const customers = getUniqueCustomers(orders)
     const countries = getUniqueCustomerCountries(customers)
 
@@ -40,6 +42,10 @@ export function analyzeOrders(orders: Order[]) {
     })
 
     orders.map((order) => {
+        if (order.status === 'refunded' || order.status === 'pending') {
+            return
+        }
+
         const country = order.customer?.billingAddress?.country
         if (!country) {
             return
@@ -50,9 +56,33 @@ export function analyzeOrders(orders: Order[]) {
             return
         }
 
+        let usdRevenue = 0
+
+        if (order.currency === 'usd') {
+            usdRevenue = order.netAmount
+
+            if (order.status === 'partially_refunded') {
+                usdRevenue -= order.refundedAmount
+            }
+        } else {
+            const exchangeRate = exchangeRates.find(
+                (rate) =>
+                    rate.quote.toLowerCase() === order.currency &&
+                    isSameDay(rate.date, order.createdAt),
+            )
+
+            if (exchangeRate) {
+                usdRevenue = order.netAmount / exchangeRate.rate
+
+                if (order.status === 'partially_refunded') {
+                    usdRevenue -= order.refundedAmount / exchangeRate.rate
+                }
+            }
+        }
+
         countryInfo.set(country, {
             ...record,
-            totalRevenue: record.totalRevenue + order.netAmount,
+            totalRevenue: record.totalRevenue + usdRevenue,
         })
     })
 
