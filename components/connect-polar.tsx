@@ -52,6 +52,7 @@ export function ConnectPolarButton({
             scope: 'openid orders:read organizations:read',
             code_challenge: codeChallenge,
             code_challenge_method: 'S256',
+            sub_type: 'organization',
         })
 
         onRedirect?.()
