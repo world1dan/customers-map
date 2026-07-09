@@ -6,6 +6,7 @@ import { SpinnerIcon } from '@phosphor-icons/react'
 
 import { Button, ButtonProps } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { IntrospectTokenResponse } from '@polar-sh/sdk/models/components/introspecttokenresponse.js'
 
 export interface PolarTokenData {
     access_token: string
@@ -49,10 +50,11 @@ export function ConnectPolarButton({
             response_type: 'code',
             client_id: process.env.NEXT_PUBLIC_POLAR_CLIENT_ID!,
             redirect_uri: getRedirectUri(),
-            scope: 'openid orders:read organizations:read',
+            scope: 'openid orders:read organizations:read subscriptions:read',
             code_challenge: codeChallenge,
             code_challenge_method: 'S256',
-            sub_type: 'organization',
+
+            // sub_type: 'organization',
         })
 
         onRedirect?.()
@@ -106,6 +108,30 @@ export function ConnectPolarButton({
             }
 
             const tokenData: PolarTokenData = await tokenRes.json()
+
+            // console.log(tokenData)
+
+            // const introspectParams = new URLSearchParams({
+            //     token: tokenData.access_token,
+            //     client_id: process.env.NEXT_PUBLIC_POLAR_CLIENT_ID!,
+            //     client_secret: process.env.NEXT_PUBLIC_POLAR_CLIENT_SECRET!,
+            // })
+
+            // const introspectRes = await fetch(
+            //     'https://api.polar.sh/v1/oauth2/introspect',
+            //     {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/x-www-form-urlencoded',
+            //         },
+            //         body: introspectParams.toString(),
+            //     },
+            // )
+
+            // const introspectData: IntrospectTokenResponse =
+            //     await introspectRes.json()
+
+            // console.log(introspectData)
 
             // Clear verifier for security
             localStorage.removeItem('polar_oauth_code_verifier')

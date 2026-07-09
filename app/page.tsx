@@ -58,11 +58,10 @@ export default function Home() {
 
         yield 'Fetching Organization'
 
-        const userInfo = await polar.oauth2.userinfo()
+        // const userInfo = await polar.oauth2.userinfo()
 
-        const organization = await polar.organizations.get({
-            id: userInfo.sub,
-        })
+        const organizations = await polar.organizations.listOrganizations({})
+        const organization = organizations.result.items[0]
 
         let page = 1
         const limit = 100

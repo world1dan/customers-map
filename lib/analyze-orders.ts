@@ -41,8 +41,15 @@ export function analyzeOrders(orders: Order[], exchangeRates: ExchangeRate[]) {
         })
     })
 
+    let cumulativeRevenue = 0
+
     orders.map((order) => {
-        if (order.status === 'refunded' || order.status === 'pending') {
+        if (
+            order.status === 'refunded' ||
+            order.status === 'pending' ||
+            order.status === 'void' ||
+            order.status === 'draft'
+        ) {
             return
         }
 
@@ -79,6 +86,8 @@ export function analyzeOrders(orders: Order[], exchangeRates: ExchangeRate[]) {
                 }
             }
         }
+
+        cumulativeRevenue += usdRevenue
 
         countryInfo.set(country, {
             ...record,
